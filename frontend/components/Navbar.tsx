@@ -28,9 +28,9 @@ export const Navbar = () => {
     const isActive = (path: string) => pathname === path;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)]/80 backdrop-blur-xl border-b border-[var(--card-border)]">
+        <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)]/95 backdrop-blur-xl border-b border-[var(--card-border)] safe-area-inset-top">
             <div className="max-w-7xl mx-auto px-4">
-                <div className="flex items-center justify-between h-16">
+                <div className="flex items-center justify-between h-14 md:h-16">
                     {/* Logo */}
                     <div
                         className="flex items-center space-x-2 cursor-pointer"
@@ -52,9 +52,18 @@ export const Navbar = () => {
                             className="search-input"
                         />
                     </form>
+                    
+                    {/* Mobile Search Button */}
+                    <button
+                        onClick={() => router.push("/home?search=")}
+                        className="md:hidden p-2 rounded-lg hover:bg-[var(--card-bg)] transition-colors"
+                        aria-label="Search"
+                    >
+                        <Search size={20} />
+                    </button>
 
                     {/* Main Nav Items */}
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 md:space-x-2">
                         <NavItem
                             icon={<Ghost size={20} />}
                             label="Home"
@@ -79,6 +88,7 @@ export const Navbar = () => {
                             onClick={toggleTheme}
                             className="p-2 rounded-lg hover:bg-[var(--card-bg)] transition-colors"
                             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                            aria-label="Toggle theme"
                         >
                             {theme === 'dark' ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} className="text-[var(--foreground)]" />}
                         </button>

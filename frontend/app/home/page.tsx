@@ -83,7 +83,7 @@ export default function HomePage() {
 
     return (
         <MainLayout>
-            <div className="pb-20 md:pb-8">
+            <div className="pb-20 md:pb-8 w-full">
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}

@@ -61,7 +61,7 @@ export default function CreatePostPage() {
 
     return (
         <MainLayout>
-            <div className="pb-20 md:pb-8 max-w-2xl mx-auto">
+            <div className="pb-20 md:pb-8 max-w-2xl mx-auto w-full">
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}

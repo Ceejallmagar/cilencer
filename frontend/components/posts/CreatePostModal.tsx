@@ -73,12 +73,17 @@ export const CreatePostModal = ({ isOpen, onClose, onPostCreated }: CreatePostMo
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+        <div 
+            className="modal-overlay" 
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+            onTouchStart={(e) => e.target === e.currentTarget && onClose()}
+        >
             <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 className="modal-content"
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">

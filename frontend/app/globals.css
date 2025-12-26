@@ -371,18 +371,29 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 100;
+    z-index: 1000;
+    padding: 16px;
+    overflow-y: auto;
 }
 
 .modal-content {
     background: var(--background);
     border: 1px solid var(--card-border);
     border-radius: 20px;
-    padding: 24px;
+    padding: 20px;
     max-width: 500px;
-    width: 90%;
-    max-height: 90vh;
+    width: 100%;
+    max-height: calc(100vh - 32px);
     overflow-y: auto;
+    margin: auto;
+}
+
+@media (max-width: 768px) {
+    .modal-content {
+        padding: 16px;
+        border-radius: 16px;
+        max-height: calc(100vh - 100px);
+    }
 }
 
 /* Filter Tags */
@@ -528,5 +539,43 @@ body {
     .post-action-btn {
         flex-direction: row;
         min-width: auto;
+    }
+
+    /* Ensure content is visible on mobile */
+    body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Fix touch targets */
+    button, a, input, textarea, select {
+        -webkit-tap-highlight-color: rgba(168, 85, 247, 0.2);
+    }
+
+    /* Prevent horizontal scroll */
+    html, body {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* Ensure content is not hidden behind fixed elements */
+    main {
+        padding-top: 80px !important;
+    }
+
+    /* Better touch targets for mobile */
+    button, a {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Fix for iOS safe areas */
+    @supports (padding: max(0px)) {
+        .safe-area-inset-top {
+            padding-top: max(16px, env(safe-area-inset-top));
+        }
+        .safe-area-inset-bottom {
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
+        }
     }
 }

@@ -12,28 +12,36 @@ async function getAuthToken() {
 
 // API client with automatic token handling
 async function apiRequest(endpoint: string, options: RequestInit = {}) {
-    const token = await getAuthToken();
+    try {
+        const token = await getAuthToken();
 
-    const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        ...options.headers,
-    };
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+            ...options.headers,
+        };
 
-    if (token) {
-        (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+        if (token) {
+            (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Request failed' }));
+            throw new Error(error.error || `Request failed with status ${response.status}`);
+        }
+
+        return response.json();
+    } catch (error: any) {
+        // Better error handling for mobile
+        if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+            throw new Error('Network error. Please check your internet connection and try again.');
+        }
+        throw error;
     }
-
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        ...options,
-        headers,
-    });
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ error: 'Request failed' }));
-        throw new Error(error.error || 'Request failed');
-    }
-
-    return response.json();
 }
 
 // Auth API

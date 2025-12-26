@@ -153,8 +153,8 @@ export const Sidebar = () => {
             </div>
 
             {/* Mobile Bottom Navigation */}
-            <div className="fixed bottom-0 left-0 right-0 md:hidden bg-[var(--background)]/90 backdrop-blur-xl border-t border-[var(--card-border)] z-50">
-                <div className="flex items-center justify-around py-2">
+            <div className="fixed bottom-0 left-0 right-0 md:hidden bg-[var(--background)]/95 backdrop-blur-xl border-t border-[var(--card-border)] z-40 shadow-lg">
+                <div className="flex items-center justify-around py-2 px-2 safe-area-inset-bottom">
                     <MobileNavItem icon={<User size={24} />} active={isActive("/profile")} onClick={() => router.push("/profile")} />
                     <MobileNavItem icon={<Bell size={24} />} badge={unreadCount} active={isActive("/notifications")} onClick={() => router.push("/notifications")} />
                     <MobileNavItem icon={<PlusSquare size={28} />} primary onClick={() => router.push("/create-post")} />
