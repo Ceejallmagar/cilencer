@@ -1,0 +1,8 @@
+{
+    "name": "silence-booster-monorepo",
+    "private": true,
+    "workspaces": [
+        "frontend",
+        "backend"
+    ]
+}
