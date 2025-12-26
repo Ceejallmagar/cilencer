@@ -70,7 +70,7 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Silence Booster Server running on port ${PORT}`);
-    console.log(`📡 API available at http://localhost:${PORT}`);
+    console.log(`📡 API available at http://localhost:${PORT} (and http://192.168.16.107:${PORT})`);
 });
