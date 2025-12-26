@@ -1,0 +1,220 @@
+const express = require('express');
+const router = express.Router();
+const admin = require('firebase-admin');
+const db = admin.firestore();
+const { verifyToken } = require('../middleware/auth');
+
+// Get all troll posts
+router.get('/', async (req, res) => {
+    try {
+        const { limit = 20, lastId } = req.query;
+
+        let query = db.collection('trolls')
+            .orderBy('createdAt', 'desc')
+            .limit(parseInt(limit));
+
+        if (lastId) {
+            const lastDoc = await db.collection('trolls').doc(lastId).get();
+            query = query.startAfter(lastDoc);
+        }
+
+        const snapshot = await query.get();
+        const trolls = [];
+
+        for (const doc of snapshot.docs) {
+            const troll = { id: doc.id, ...doc.data() };
+
+            // Get target user data
+            if (troll.targetUserId) {
+                const userDoc = await db.collection('users').doc(troll.targetUserId).get();
+                if (userDoc.exists) {
+                    troll.targetUser = {
+                        displayName: userDoc.data().displayName,
+                        username: userDoc.data().username,
+                        photoURL: userDoc.data().photoURL
+                    };
+                }
+            }
+
+            trolls.push(troll);
+        }
+
+        res.json(trolls);
+    } catch (error) {
+        console.error('Get trolls error:', error);
+        res.status(500).json({ error: 'Failed to get trolls' });
+    }
+});
+
+// Get troll of the week
+router.get('/winner', async (req, res) => {
+    try {
+        const snapshot = await db.collection('trolls')
+            .where('isTrollOfWeek', '==', true)
+            //.orderBy('createdAt', 'desc') // Removed to avoid index error
+            .limit(1)
+            .get();
+
+        if (snapshot.empty) {
+            return res.json({ winner: null });
+        }
+
+        const winner = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+
+        // Get winner user data
+        if (winner.winnerUserId) {
+            const userDoc = await db.collection('users').doc(winner.winnerUserId).get();
+            if (userDoc.exists) {
+                winner.winnerUser = userDoc.data();
+            }
+        }
+
+        res.json({ winner });
+    } catch (error) {
+        console.error('Get troll winner error:', error);
+        res.status(500).json({ error: 'Failed to get troll winner' });
+    }
+});
+
+// Create "Troll Me" or "Troll Him" post
+router.post('/', verifyToken, async (req, res) => {
+    try {
+        const { targetType, content, targetUserId } = req.body;
+        const userId = req.user.uid;
+
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+
+        const troll = {
+            creatorId: userId,
+            creatorUsername: userData.username,
+            creatorPhotoURL: userData.photoURL || '',
+            targetType, // 'me' or 'him'
+            targetUserId: targetType === 'me' ? userId : targetUserId,
+            content,
+            responses: [],
+            totalLikes: 0,
+            winnerResponse: null,
+            winnerUserId: null,
+            isTrollOfWeek: false,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+
+        const docRef = await db.collection('trolls').add(troll);
+
+        // Increment troll count
+        await db.collection('users').doc(userId).update({
+            trollCount: admin.firestore.FieldValue.increment(1)
+        });
+
+        res.status(201).json({ id: docRef.id, ...troll });
+    } catch (error) {
+        console.error('Create troll error:', error);
+        res.status(500).json({ error: 'Failed to create troll post' });
+    }
+});
+
+// Respond to a troll post
+router.post('/:trollId/respond', verifyToken, async (req, res) => {
+    try {
+        const { trollId } = req.params;
+        const { content, imageURL } = req.body;
+        const userId = req.user.uid;
+
+        const userDoc = await db.collection('users').doc(userId).get();
+        const userData = userDoc.data();
+
+        const response = {
+            id: db.collection('_').doc().id, // Generate unique ID
+            userId,
+            username: userData.username,
+            userPhotoURL: userData.photoURL || '',
+            content,
+            imageURL: imageURL || '',
+            likes: 0,
+            likedBy: [],
+            createdAt: new Date().toISOString()
+        };
+
+        await db.collection('trolls').doc(trollId).update({
+            responses: admin.firestore.FieldValue.arrayUnion(response)
+        });
+
+        res.status(201).json(response);
+    } catch (error) {
+        console.error('Respond to troll error:', error);
+        res.status(500).json({ error: 'Failed to respond' });
+    }
+});
+
+// Like a troll response
+router.post('/:trollId/like/:responseId', verifyToken, async (req, res) => {
+    try {
+        const { trollId, responseId } = req.params;
+        const userId = req.user.uid;
+
+        const trollRef = db.collection('trolls').doc(trollId);
+        const trollDoc = await trollRef.get();
+
+        if (!trollDoc.exists) {
+            return res.status(404).json({ error: 'Troll post not found' });
+        }
+
+        const trollData = trollDoc.data();
+        const responses = trollData.responses || [];
+
+        // Find and update the response
+        const responseIndex = responses.findIndex(r => r.id === responseId);
+        if (responseIndex === -1) {
+            return res.status(404).json({ error: 'Response not found' });
+        }
+
+        const response = responses[responseIndex];
+        const alreadyLiked = response.likedBy && response.likedBy.includes(userId);
+
+        if (alreadyLiked) {
+            response.likes -= 1;
+            response.likedBy = response.likedBy.filter(id => id !== userId);
+        } else {
+            response.likes += 1;
+            response.likedBy = [...(response.likedBy || []), userId];
+        }
+
+        responses[responseIndex] = response;
+
+        // Recalculate total likes
+        const totalLikes = responses.reduce((sum, r) => sum + r.likes, 0);
+
+        await trollRef.update({ responses, totalLikes });
+
+        res.json({ liked: !alreadyLiked, likes: response.likes });
+    } catch (error) {
+        console.error('Like troll response error:', error);
+        res.status(500).json({ error: 'Failed to like response' });
+    }
+});
+
+// Get top responses for a troll
+router.get('/:trollId/top-responses', async (req, res) => {
+    try {
+        const { trollId } = req.params;
+
+        const trollDoc = await db.collection('trolls').doc(trollId).get();
+
+        if (!trollDoc.exists) {
+            return res.status(404).json({ error: 'Troll post not found' });
+        }
+
+        const responses = trollDoc.data().responses || [];
+
+        // Sort by likes descending
+        const sortedResponses = responses.sort((a, b) => b.likes - a.likes);
+
+        res.json(sortedResponses.slice(0, 10));
+    } catch (error) {
+        console.error('Get top responses error:', error);
+        res.status(500).json({ error: 'Failed to get top responses' });
+    }
+});
+
+module.exports = router;
