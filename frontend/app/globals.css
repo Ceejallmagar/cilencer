@@ -558,11 +558,6 @@ body {
         width: 100%;
     }
 
-    /* Ensure content is not hidden behind fixed elements */
-    main {
-        padding-top: 80px !important;
-    }
-
     /* Better touch targets for mobile */
     button, a {
         min-height: 44px;
