@@ -29,14 +29,14 @@ export default function MemeWarPage() {
 
         // Poll for updates every 10 seconds to handle state changes (e.g. admin starts/stops war)
         const interval = setInterval(() => {
-            fetchActiveWar(true);
+            fetchActiveWar();
         }, 10000);
 
         return () => clearInterval(interval);
     }, []);
 
-    const fetchActiveWar = async (silent = false) => {
-        if (!silent) setLoading(true);
+    const fetchActiveWar = async () => {
+        setLoading(true);
         try {
             const data = await memeWarAPI.getActiveWar();
             if (data.active && data.war) {
@@ -54,7 +54,7 @@ export default function MemeWarPage() {
         } catch (error) {
             console.error("Failed to fetch meme war:", error);
         } finally {
-            if (!silent) setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -78,7 +78,7 @@ export default function MemeWarPage() {
                 memeContent: submission
             });
             setSubmission("");
-            fetchActiveWar(true);
+            fetchActiveWar();
             alert("Meme submitted!");
         } catch (error: any) {
             alert(error.message || "Failed to submit");
@@ -97,7 +97,7 @@ export default function MemeWarPage() {
             });
             setResponseContent("");
             setRespondingTo(null);
-            fetchActiveWar(true);
+            fetchActiveWar();
             alert("Response submitted!");
         } catch (error: any) {
             alert(error.message || "Failed to respond");
@@ -110,7 +110,7 @@ export default function MemeWarPage() {
         if (!userProfile) return;
         try {
             await memeWarAPI.vote(entryId, target);
-            fetchActiveWar(true);
+            fetchActiveWar();
         } catch (error: any) {
             alert(error.message || "Failed to vote");
         }
