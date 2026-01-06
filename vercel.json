@@ -1,6 +1,6 @@
 {
-    "buildCommand": "npm run build",
-    "installCommand": "npm install",
-    "outputDirectory": ".next",
-    "framework": "nextjs"
+  "buildCommand": "cd silence-booster/frontend && npm run build",
+  "outputDirectory": "silence-booster/frontend/.next",
+  "installCommand": "cd silence-booster/frontend && npm install",
+  "framework": "nextjs"
 }
