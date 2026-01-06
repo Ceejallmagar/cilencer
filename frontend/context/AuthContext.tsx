@@ -54,8 +54,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const profileData = await usersAPI.getUser(firebaseUser.uid);
             setUserProfile(profileData);
         } catch (error) {
-            console.error("Error fetching user profile:", error);
-            // Set basic profile from Firebase user as fallback
+            console.warn("User profile not found, attempting to create...");
+
+            try {
+                // Try to create the profile if it doesn't exist
+                const { authAPI } = await import('@/lib/api');
+                const response = await authAPI.createProfile({
+                    uid: firebaseUser.uid,
+                    email: firebaseUser.email || "",
+                    displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0],
+                    photoURL: firebaseUser.photoURL || ""
+                });
+
+                if (response && response.user) {
+                    setUserProfile(response.user);
+                    return;
+                }
+            } catch (createError) {
+                console.error("Failed to auto-create profile:", createError);
+            }
+
+            // Set basic profile from Firebase user as fallback (only if creation failed)
             setUserProfile({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || "",
