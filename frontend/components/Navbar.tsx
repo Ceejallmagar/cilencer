@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Ghost, Sword, MessageCircle, Search, Sun, Moon } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTheme } from "@/context/ThemeContext";
@@ -11,8 +11,27 @@ export const Navbar = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [showFilters, setShowFilters] = useState(false);
     const [activeFilter, setActiveFilter] = useState("trending");
+    const [isVisible, setIsVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
 
-    const filters = ["trending", "fresh", "savage", "verified", "dank", "classic"];
+    useEffect(() => {
+        const handleScroll = () => {
+            if (typeof window !== 'undefined') {
+                const currentScrollY = window.scrollY;
+                if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                    setIsVisible(false);
+                } else {
+                    setIsVisible(true);
+                }
+                setLastScrollY(currentScrollY);
+            }
+        };
+
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [lastScrollY]);
+
+    const filters = ["trending", "fresh", "savage", "verified", "dank", "classic", "suggestion"];
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -28,7 +47,7 @@ export const Navbar = () => {
     const isActive = (path: string) => pathname === path;
 
     return (
-        <div className="fixed top-0 left-0 right-0 z-50 bg-[var(--background)]/95 backdrop-blur-xl border-b border-[var(--card-border)] safe-area-inset-top">
+        <div className={`fixed top-0 left-0 right-0 z-50 bg-[var(--background)]/95 backdrop-blur-2xl shadow-md border-b border-[var(--card-border)]/80 safe-area-inset-top transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
             <div className="max-w-7xl mx-auto px-4">
                 <div className="flex items-center justify-between h-14 md:h-16">
                     {/* Logo */}
@@ -52,7 +71,7 @@ export const Navbar = () => {
                             className="search-input"
                         />
                     </form>
-                    
+
                     {/* Mobile Search Button */}
                     <button
                         onClick={() => router.push("/home?search=")}
@@ -102,7 +121,7 @@ export const Navbar = () => {
                         <button
                             key={filter}
                             onClick={() => setActiveFilter(filter)}
-                            className={`filter-tag ${activeFilter === filter ? 'active' : ''}`}
+                            className={`filter-tag shrink-0 ${activeFilter === filter ? 'active' : ''}`}
                         >
                             {filter.charAt(0).toUpperCase() + filter.slice(1)}
                         </button>

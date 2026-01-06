@@ -1,4 +1,15 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// Base URL for API calls. Default to environment variable or dynamic localhost/IP.
+const getApiBaseUrl = () => {
+    const defaultPort = '5001';
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        // If we're on localhost or an IP, use the same host for API on port 5001
+        return `http://${hostname}:${defaultPort}/api`;
+    }
+    return process.env.NEXT_PUBLIC_API_URL || `http://127.0.0.1:${defaultPort}/api`;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Get auth token from Firebase
 async function getAuthToken() {
@@ -27,6 +38,7 @@ async function apiRequest(endpoint: string, options: RequestInit = {}) {
         const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             ...options,
             headers,
+            credentials: 'include',
         });
 
         if (!response.ok) {
@@ -80,6 +92,8 @@ export const postsAPI = {
         apiRequest(`/posts/${postId}/reply`, { method: 'POST', body: JSON.stringify({ content }) }),
     searchPosts: (query: string) => apiRequest(`/posts/search/${encodeURIComponent(query)}`),
     discoverPosts: () => apiRequest('/posts/discover'),
+    deletePost: (postId: string) => apiRequest(`/posts/${postId}`, { method: 'DELETE' }),
+    notInterested: (postId: string) => apiRequest(`/posts/${postId}/not-interested`, { method: 'POST' }),
 };
 
 // Meme War API
@@ -106,6 +120,7 @@ export const trollsAPI = {
     likeTrollResponse: (trollId: string, responseId: string) =>
         apiRequest(`/trolls/${trollId}/like/${responseId}`, { method: 'POST' }),
     getTopResponses: (trollId: string) => apiRequest(`/trolls/${trollId}/top-responses`),
+    deleteTroll: (trollId: string) => apiRequest(`/trolls/${trollId}`, { method: 'DELETE' }),
 };
 
 // Notifications API
@@ -156,5 +171,14 @@ export const adminAPI = {
     // Moderation
     getAllPosts: (limit = 50) => apiRequest(`/admin/posts?limit=${limit}`),
     deletePost: (postId: string) => apiRequest(`/admin/posts/${postId}`, { method: 'DELETE' }),
+    featureUser: (userId: string) => apiRequest(`/users/${userId}/feature`, { method: 'POST' }),
     getAllUsers: (limit = 50) => apiRequest(`/admin/users?limit=${limit}`),
+};
+
+// Ads API
+export const adsAPI = {
+    getAds: () => apiRequest('/ads'),
+    createAd: (data: { title: string; content: string; imageURL?: string; linkURL?: string }) =>
+        apiRequest('/ads', { method: 'POST', body: JSON.stringify(data) }),
+    deleteAd: (adId: string) => apiRequest(`/ads/${adId}`, { method: 'DELETE' }),
 };

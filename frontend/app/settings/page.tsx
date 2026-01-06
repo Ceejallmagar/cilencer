@@ -5,10 +5,11 @@ import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import { usersAPI } from "@/lib/api";
+import { getBadgeEmoji, getBadgeImage } from "@/lib/badges";
 import { doc, updateDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { User, Lock, Palette, Globe, Info, Loader2, Check } from "lucide-react";
+import { User, Lock, Palette, Globe, Info, Loader2, Check, Award } from "lucide-react";
 
 const LANGUAGES = [
     { code: "en", name: "English" },
@@ -31,6 +32,8 @@ export default function SettingsPage() {
     const [bio, setBio] = useState(userProfile?.bio || "");
     const [photoURL, setPhotoURL] = useState(userProfile?.photoURL || "");
     const [language, setLanguage] = useState(userProfile?.language || "en");
+    const [activeBadge, setActiveBadge] = useState(userProfile?.activeBadge || "");
+    const [bannerColor, setBannerColor] = useState(userProfile?.bannerColor || "");
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -54,6 +57,8 @@ export default function SettingsPage() {
                 photoURL,
                 language,
                 theme,
+                activeBadge,
+                bannerColor,
             });
 
             await refreshProfile();
@@ -204,6 +209,69 @@ export default function SettingsPage() {
                     </div>
                 </motion.div>
 
+                {/* Badge Selection Section */}
+                {
+                    ((userProfile?.badges?.length ?? 0) > 0 || userProfile?.isAdmin) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.05 }}
+                            className="glass-card p-6 mb-6"
+                        >
+                            <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                                <Award size={20} />
+                                Profile Badge
+                            </h2>
+                            <p className="text-sm text-[var(--muted)] mb-4">
+                                Select a badge to display next to your name
+                            </p>
+
+                            <div className="flex flex-wrap gap-3">
+                                {/* Badge Option: None */}
+                                <div
+                                    onClick={() => setActiveBadge("")}
+                                    className={`cursor-pointer px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-2 ${!activeBadge
+                                        ? "border-[var(--primary)] bg-[var(--primary)]/10"
+                                        : "border-[var(--card-border)] bg-[var(--card-bg)] hover:border-[var(--primary)]/50"
+                                        }`}
+                                >
+                                    <span className="text-xl">🚫</span>
+                                    <span className="font-medium">None</span>
+                                </div>
+
+                                {/* Merge and render badges */}
+                                {[
+                                    ...(userProfile?.isAdmin ? ["admin_badge"] : []),
+                                    ...(userProfile?.badges || [])
+                                ].filter((badge, index, self) => self.indexOf(badge) === index)
+                                    .map((badge) => {
+
+
+                                        return (
+                                            <div
+                                                key={badge}
+                                                onClick={() => setActiveBadge(badge)}
+                                                className={`cursor-pointer px-4 py-3 rounded-xl border-2 transition-all flex items-center gap-2 ${activeBadge === badge
+                                                    ? "border-purple-500 bg-purple-500/10 shadow-[0_0_10px_rgba(168,85,247,0.2)]"
+                                                    : "border-[var(--card-border)] bg-[var(--card-bg)] hover:border-purple-500/50"
+                                                    }`} // Closing the className template literal
+                                            >
+                                                <span className="text-xl">
+                                                    {getBadgeImage(badge) ? (
+                                                        <img src={getBadgeImage(badge)} alt="Badge" className="w-6 h-6 object-contain" />
+                                                    ) : (
+                                                        getBadgeEmoji(badge)
+                                                    )}
+                                                </span>
+                                                <span className="font-medium capitalize">{badge.replace(/_/g, " ")}</span>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        </motion.div>
+                    )
+                }
+
                 {/* Password Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -324,6 +392,28 @@ export default function SettingsPage() {
                     </select>
                 </motion.div>
 
+                {/* Ads Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 }}
+                    className="glass-card p-6 mb-6"
+                >
+                    <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                        <span className="text-xl">📢</span>
+                        Advertise with us
+                    </h2>
+                    <p className="text-sm text-[var(--muted)] mb-4">
+                        Want to reach our chaotic community? Promote your brand on Silence Booster.
+                    </p>
+                    <a
+                        href="mailto:cilencerproduction@gmail.com"
+                        className="btn-primary w-full flex items-center justify-center gap-2 no-underline"
+                    >
+                        Contact for Ads
+                    </a>
+                </motion.div>
+
                 {/* About Section */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -356,7 +446,7 @@ export default function SettingsPage() {
                         </div>
                     </div>
                 </motion.div>
-            </div>
-        </MainLayout>
+            </div >
+        </MainLayout >
     );
 }

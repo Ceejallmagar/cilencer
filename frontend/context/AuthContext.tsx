@@ -25,6 +25,7 @@ interface UserProfile {
     following: string[];
     theme: 'dark' | 'light';
     language: string;
+    bannerColor?: string;
 }
 
 interface AuthContextType {
@@ -48,47 +49,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const fetchUserProfile = async (firebaseUser: User) => {
         try {
-            // Try to get profile from Firestore directly
-            const userRef = doc(db, "users", firebaseUser.uid);
-            const userSnap = await getDoc(userRef);
-
-            if (userSnap.exists()) {
-                setUserProfile(userSnap.data() as UserProfile);
-            } else {
-                // Create new profile
-                const newProfile: UserProfile = {
-                    uid: firebaseUser.uid,
-                    email: firebaseUser.email || "",
-                    displayName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "User",
-                    username: (firebaseUser.email?.split("@")[0] || "user").toLowerCase().replace(/[^a-z0-9]/g, "_"),
-                    photoURL: firebaseUser.photoURL || "",
-                    bio: "",
-                    isAdmin: false,
-                    isVerified: false,
-                    position: 0,
-                    memeWins: 0,
-                    trollWins: 0,
-                    memeCount: 0,
-                    trollCount: 0,
-                    badges: [],
-                    activeBadge: null,
-                    followers: 0,
-                    following: [],
-                    theme: "dark",
-                    language: "en",
-                };
-
-                await setDoc(userRef, {
-                    ...newProfile,
-                    createdAt: serverTimestamp(),
-                    lastLogin: serverTimestamp(),
-                });
-
-                setUserProfile(newProfile);
-            }
+            // Use backend API instead of Firestore directly to avoid offline errors
+            const { usersAPI } = await import('@/lib/api');
+            const profileData = await usersAPI.getUser(firebaseUser.uid);
+            setUserProfile(profileData);
         } catch (error) {
             console.error("Error fetching user profile:", error);
-            // Set basic profile from Firebase user
+            // Set basic profile from Firebase user as fallback
             setUserProfile({
                 uid: firebaseUser.uid,
                 email: firebaseUser.email || "",
@@ -109,6 +76,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 following: [],
                 theme: "dark",
                 language: "en",
+                bannerColor: "",
             });
         }
     };

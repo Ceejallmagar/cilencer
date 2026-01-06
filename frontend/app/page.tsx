@@ -8,6 +8,15 @@ import { useAuth } from "@/context/AuthContext";
 export default function LandingPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const [mousePosition, setMousePosition] = React.useState({ x: 0, y: 0 });
+
+  React.useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   const handleEnter = () => {
     if (user) {
@@ -18,10 +27,14 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-hidden relative selection:bg-purple-500 selection:text-white">
-      {/* Background Gradients */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-900/30 rounded-full blur-[128px]" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-900/30 rounded-full blur-[128px]" />
+    <div className="min-h-screen bg-black text-white overflow-hidden relative selection:bg-white selection:text-black">
+      {/* Mouse Spotlight */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.1), transparent 40%)`
+        }}
+      />
 
       <main className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 text-center">
         <motion.div
@@ -31,10 +44,10 @@ export default function LandingPage() {
           className="space-y-6"
         >
           <motion.h1
-            className="text-7xl md:text-9xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400"
-            animate={{ backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
-            style={{ backgroundSize: "200% auto" }}
+            className="text-7xl md:text-9xl font-black tracking-tighter text-white mix-blend-difference"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "circOut" }}
           >
             SILENCE
             <br />
@@ -45,57 +58,36 @@ export default function LandingPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto font-light"
+            className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto font-light mix-blend-difference"
           >
             The battlefield for memes, trolls, and chaos.
             <br />
-            <span className="text-purple-400 font-medium">Survive the noise. Boost the silence.</span>
+            <span className="text-white font-medium border-b border-white pb-0.5">Survive the noise. Boost the silence.</span>
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6 }}
-            className="pt-8"
+            className="pt-12"
           >
             <Button
               onClick={handleEnter}
-              className="text-xl px-12 py-4 rounded-full bg-white text-black hover:bg-gray-200 transition-transform active:scale-95 shadow-[0_0_50px_-12px_rgba(255,255,255,0.5)]"
+              className="group relative text-xl px-16 py-6 rounded-full bg-white text-black hover:bg-white hover:scale-105 transition-all shadow-[0_0_30px_-5px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-5px_rgba(255,255,255,0.8)] font-black tracking-widest uppercase overflow-hidden"
             >
-              {loading ? "Loading..." : user ? "Enter Dashboard" : "Join the Chaos"}
+              <span className="relative z-10 group-hover:tracking-[0.2em] transition-all duration-300 text-black">
+                {loading ? "Loading..." : user ? "Enter Dashboard" : "Enter Silence"}
+              </span>
+              <div className="absolute inset-0 bg-white group-hover:opacity-100 transition-opacity duration-300" />
             </Button>
           </motion.div>
         </motion.div>
 
-        {/* Floating Elements decoration */}
-        <FloatingIcon emoji="🔥" delay={1} x={-200} y={-100} />
-        <FloatingIcon emoji="💀" delay={1.5} x={200} y={-150} />
-        <FloatingIcon emoji="🤡" delay={2} x={-150} y={150} />
-        <FloatingIcon emoji="🤫" delay={2.5} x={180} y={100} />
+        {/* Floating Elements removed for strict clean look, or we can add subtle white particles if desired. 
+            For now, keeping it strictly minimal as requested. */}
       </main>
     </div>
   );
 }
 
-function FloatingIcon({ emoji, delay, x, y }: { emoji: string, delay: number, x: number, y: number }) {
-  return (
-    <motion.div
-      className="absolute text-4xl hidden md:block select-none"
-      initial={{ opacity: 0, x: 0, y: 0 }}
-      animate={{
-        opacity: [0, 1, 1, 0],
-        x: [0, x],
-        y: [0, y],
-        rotate: [0, 45, -45, 0]
-      }}
-      transition={{
-        duration: 10,
-        repeat: Infinity,
-        delay: delay,
-        ease: "easeInOut"
-      }}
-    >
-      {emoji}
-    </motion.div>
-  );
-}
+// Helper removed as floating icons are removed

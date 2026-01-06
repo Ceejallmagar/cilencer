@@ -124,13 +124,28 @@ export default function HomePage() {
                             {discoverPosts.slice(0, 5).map((post) => (
                                 <div
                                     key={post.id}
-                                    className="min-w-[200px] p-3 rounded-xl glass-card cursor-pointer hover:border-[var(--primary)]/40 transition-colors"
+                                    onClick={() => window.location.href = `/post/${post.id}`}
+                                    className="min-w-[200px] p-4 rounded-xl glass-card cursor-pointer hover:border-[var(--primary)]/40 transition-all group"
                                 >
-                                    <p className="text-sm line-clamp-2 mb-2">{post.content}</p>
-                                    <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
-                                        <span>@{post.username}</span>
-                                        <span>·</span>
-                                        <span>{post.likes} ❤️</span>
+                                    {post.imageURL && (
+                                        <div className="aspect-square mb-3 rounded-lg overflow-hidden bg-black/20">
+                                            {post.imageURL.match(/\.(mp4|webm|ogg)$/) || (post.imageURL.includes('firebasestorage') && post.imageURL.includes('alt=media')) ? (
+                                                <div className="flex items-center justify-center h-full text-2xl">📹</div>
+                                            ) : (
+                                                <img
+                                                    src={post.imageURL}
+                                                    alt="Meme"
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                />
+                                            )}
+                                        </div>
+                                    )}
+                                    <p className="text-sm font-medium line-clamp-2 mb-3">{post.content}</p>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-[var(--muted)]">@{post.username}</span>
+                                        <span className="text-xs bg-[var(--primary)]/10 text-[var(--primary)] px-2 py-0.5 rounded-full">
+                                            {post.likes} ❤️
+                                        </span>
                                     </div>
                                 </div>
                             ))}

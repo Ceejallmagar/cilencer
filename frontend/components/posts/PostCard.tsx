@@ -1,10 +1,11 @@
 "use client";
 import React, { useState } from "react";
-import { Heart, MessageCircle, Share2, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Share2, MoreHorizontal, Trash } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { postsAPI } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { ReplySection } from "./ReplySection";
+import { getBadgeEmoji, getBadgeImage, getBadgeType } from "@/lib/badges";
 
 interface Post {
     id: string;
@@ -13,6 +14,7 @@ interface Post {
     userPhotoURL: string;
     userDisplayName: string;
     isVerified: boolean;
+    activeBadge?: string | null;
     content: string;
     imageURL?: string;
     likes: number;
@@ -27,18 +29,32 @@ interface PostCardProps {
     post: Post;
     onReplyClick?: () => void;
     onShareClick?: () => void;
+    onDelete?: () => void;
 }
 
 // Funny like stickers
 const LIKE_EMOJIS = ["🤣", "💀", "🔥", "😭", "💯", "⚡", "🎯", "👑"];
 
-export const PostCard = ({ post, onReplyClick, onShareClick }: PostCardProps) => {
+export const PostCard = ({ post, onReplyClick, onShareClick, onDelete }: PostCardProps) => {
     const { user } = useAuth();
     const [liked, setLiked] = useState(post.likedBy?.includes(user?.uid || "") || false);
     const [likeCount, setLikeCount] = useState(post.likes);
     const [currentEmoji, setCurrentEmoji] = useState(LIKE_EMOJIS[0]);
     const [showBurst, setShowBurst] = useState(false);
     const [showReplies, setShowReplies] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
+
+    const handleDelete = async () => {
+        if (!confirm("Are you sure you want to delete this post?")) return;
+        try {
+            await postsAPI.deletePost(post.id);
+            if (onDelete) onDelete();
+            else window.location.reload(); // Fallback if no callback
+        } catch (error) {
+            alert("Failed to delete post");
+            console.error(error);
+        }
+    };
 
     const handleLike = async () => {
         // Animate
@@ -91,17 +107,42 @@ export const PostCard = ({ post, onReplyClick, onShareClick }: PostCardProps) =>
                     {/* Header */}
                     <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                            <div className="profile-pic-container">
-                                {post.userPhotoURL ? (
-                                    <img
-                                        src={post.userPhotoURL}
-                                        alt={post.username}
-                                        className="w-10 h-10 rounded-full object-cover border-2 border-[var(--primary)]/30"
-                                    />
-                                ) : (
-                                    <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--btn-gradient-start)] to-[var(--btn-gradient-end)] flex items-center justify-center font-bold text-[var(--btn-text)]">
-                                        {post.username?.charAt(0).toUpperCase() || "U"}
-                                    </div>
+                            <div className="profile-pic-container relative">
+                                <div className="relative z-0">
+                                    {post.userPhotoURL ? (
+                                        <img
+                                            src={post.userPhotoURL}
+                                            alt={post.username}
+                                            className="w-10 h-10 rounded-full object-cover border-2 border-[var(--primary)]/30"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[var(--btn-gradient-start)] to-[var(--btn-gradient-end)] flex items-center justify-center font-bold text-[var(--btn-text)]">
+                                            {post.username?.charAt(0).toUpperCase() || "U"}
+                                        </div>
+                                    )}
+                                    {/* Frame Badge Overlay */}
+                                    {post.activeBadge && getBadgeType(post.activeBadge) === 'frame' && (
+                                        <img
+                                            src={getBadgeImage(post.activeBadge)}
+                                            alt="Frame Badge"
+                                            className="badge-frame"
+                                            style={{ width: '150%', height: '150%' }}
+                                        />
+                                    )}
+                                </div>
+                                {/* Standard Badge (Bottom Right) */}
+                                {post.activeBadge && getBadgeType(post.activeBadge) !== 'frame' && (
+                                    <span className="absolute -bottom-1 -right-1 bg-[var(--card-bg)] rounded-full w-5 h-5 flex items-center justify-center text-xs border border-[var(--card-border)] shadow-sm">
+                                        {getBadgeImage(post.activeBadge) ? (
+                                            <img
+                                                src={getBadgeImage(post.activeBadge)}
+                                                alt="Badge"
+                                                className="w-4 h-4 object-contain"
+                                            />
+                                        ) : (
+                                            getBadgeEmoji(post.activeBadge)
+                                        )}
+                                    </span>
                                 )}
                             </div>
                             <div>
@@ -121,9 +162,44 @@ export const PostCard = ({ post, onReplyClick, onShareClick }: PostCardProps) =>
                                 </div>
                             </div>
                         </div>
-                        <button className="p-2 hover:bg-[var(--card-bg)] rounded-full transition-colors">
-                            <MoreHorizontal size={18} className="text-[var(--muted)]" />
-                        </button>
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowMenu(!showMenu)}
+                                className="p-2 hover:bg-[var(--card-bg)] rounded-full transition-colors"
+                            >
+                                <MoreHorizontal size={18} className="text-[var(--muted)]" />
+                            </button>
+                            {showMenu && post.userId === user?.uid && (
+                                <div className="absolute right-0 top-full mt-2 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl shadow-xl z-10 overflow-hidden min-w-[150px]">
+                                    <button
+                                        onClick={handleDelete}
+                                        className="flex items-center gap-2 w-full px-4 py-3 text-red-500 hover:bg-red-500/10 text-sm font-bold transition-colors text-left"
+                                    >
+                                        <Trash size={16} />
+                                        Delete Post
+                                    </button>
+                                </div>
+                            )}
+                            {showMenu && post.userId !== user?.uid && (
+                                <div className="absolute right-0 top-full mt-2 bg-[var(--card-bg)] border border-[var(--card-border)] rounded-xl shadow-xl z-10 overflow-hidden min-w-[200px]">
+                                    <button
+                                        onClick={async () => {
+                                            if (confirm("We won't suggest posts like this again.")) {
+                                                try {
+                                                    await postsAPI.notInterested(post.id);
+                                                    if (onDelete) onDelete(); // Reuse delete callback to hide post visually
+                                                    else window.location.reload();
+                                                } catch (e) { console.error(e); }
+                                            }
+                                        }}
+                                        className="flex items-center gap-2 w-full px-4 py-3 text-[var(--muted)] hover:bg-[var(--bg-secondary)] text-sm font-bold transition-colors text-left"
+                                    >
+                                        <span className="text-xl">👎</span>
+                                        Don't suggest this
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Content */}
@@ -131,24 +207,35 @@ export const PostCard = ({ post, onReplyClick, onShareClick }: PostCardProps) =>
                         {post.content}
                     </p>
 
-                    {/* Image */}
+                    {/* Media */}
                     {post.imageURL && (
-                        <div className="mb-4 rounded-xl overflow-hidden border border-[var(--card-border)]">
-                            <img
-                                src={post.imageURL}
-                                alt="Post"
-                                className="w-full h-auto max-h-96 object-cover"
-                            />
+                        <div className="mb-4 rounded-xl overflow-hidden border border-[var(--card-border)] bg-black/10">
+                            {post.imageURL.match(/\.(mp4|webm|ogg|mov)(\?|$)/i) ? (
+                                <video
+                                    src={post.imageURL}
+                                    controls
+                                    className="w-full h-auto"
+                                />
+                            ) : (
+                                <img
+                                    src={post.imageURL}
+                                    alt="Post"
+                                    className="w-full h-auto"
+                                    loading="lazy"
+                                />
+                            )}
                         </div>
                     )}
                 </div>
+            </div>
 
-                {/* Actions Column (Right Side) */}
-                <div className="post-actions-column hidden md:flex">
+            {/* Actions Bar (Bottom - Always Visible) */}
+            <div className="flex items-center justify-between pt-4 mt-4 border-t border-[var(--card-border)]">
+                <div className="flex items-center gap-4 sm:gap-6">
                     {/* Like Button */}
                     <button
                         onClick={handleLike}
-                        className={`post-action-btn ${liked ? 'liked' : ''}`}
+                        className={`flex items-center gap-2 group transition-colors ${liked ? 'text-red-500' : 'text-[var(--muted)] hover:text-red-500'}`}
                     >
                         <div className="relative">
                             <AnimatePresence>
@@ -157,62 +244,37 @@ export const PostCard = ({ post, onReplyClick, onShareClick }: PostCardProps) =>
                                         initial={{ scale: 1, opacity: 1 }}
                                         animate={{ scale: 2, opacity: 0, y: -20 }}
                                         exit={{ opacity: 0 }}
-                                        className="absolute -top-2 left-1/2 -translate-x-1/2 text-2xl"
+                                        className="absolute -top-8 left-1/2 -translate-x-1/2 text-2xl pointer-events-none"
                                     >
                                         {currentEmoji}
                                     </motion.span>
                                 )}
                             </AnimatePresence>
-                            <span className={`like-emoji ${liked ? 'liked' : ''}`}>
+                            <span className={`text-xl transition-transform group-active:scale-125 ${liked ? 'scale-110' : ''}`}>
                                 {liked ? currentEmoji : "😐"}
                             </span>
                         </div>
-                        <span className="text-sm font-medium">{likeCount}</span>
+                        <span className="text-sm font-bold">{likeCount}</span>
                     </button>
 
                     {/* Reply Button */}
                     <button
                         onClick={() => setShowReplies(!showReplies)}
-                        className="post-action-btn"
+                        className="flex items-center gap-2 text-[var(--muted)] hover:text-[var(--primary)] transition-colors group"
                     >
-                        <MessageCircle size={22} />
-                        <span className="text-sm font-medium">{post.replyCount}</span>
+                        <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
+                        <span className="text-sm font-bold">{post.replyCount}</span>
                     </button>
 
                     {/* Share Button */}
                     <button
                         onClick={onShareClick}
-                        className="post-action-btn"
+                        className="flex items-center gap-2 text-[var(--muted)] hover:text-green-500 transition-colors group"
                     >
-                        <Share2 size={22} />
-                        <span className="text-sm font-medium">{post.shares}</span>
+                        <Share2 size={20} className="group-hover:scale-110 transition-transform" />
+                        <span className="text-sm font-bold">{post.shares}</span>
                     </button>
                 </div>
-            </div>
-
-            {/* Mobile Actions (Bottom) */}
-            <div className="flex md:hidden items-center justify-around pt-4 mt-4 border-t border-[var(--card-border)]">
-                <button
-                    onClick={handleLike}
-                    className={`flex items-center gap-2 p-2 rounded-lg ${liked ? 'text-red-400' : 'text-[var(--muted)]'}`}
-                >
-                    <span className="text-xl">{liked ? currentEmoji : "😐"}</span>
-                    <span className="text-sm">{likeCount}</span>
-                </button>
-                <button
-                    onClick={() => setShowReplies(!showReplies)}
-                    className="flex items-center gap-2 p-2 rounded-lg text-[var(--muted)]"
-                >
-                    <MessageCircle size={20} />
-                    <span className="text-sm">{post.replyCount}</span>
-                </button>
-                <button
-                    onClick={onShareClick}
-                    className="flex items-center gap-2 p-2 rounded-lg text-[var(--muted)]"
-                >
-                    <Share2 size={20} />
-                    <span className="text-sm">{post.shares}</span>
-                </button>
             </div>
 
             {/* Replies Section */}

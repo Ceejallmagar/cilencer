@@ -5,21 +5,9 @@ import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/context/AuthContext";
 import { usersAPI } from "@/lib/api";
 import { Award, Check, Loader2 } from "lucide-react";
+import { BADGES_LIST } from "@/lib/badges";
 
-const ALL_BADGES = [
-    { id: "meme_flower", name: "Flower", icon: "🌸", requirement: "Post 100 memes" },
-    { id: "meme_star", name: "Star", icon: "⭐", requirement: "Post 500 memes" },
-    { id: "meme_crown", name: "Crown", icon: "👑", requirement: "Post 1000 memes" },
-    { id: "admin_badge", name: "Admin", icon: "🛡️", requirement: "Be an admin" },
-    { id: "fire_badge", name: "Fire", icon: "🔥", requirement: "Win a Meme War" },
-    { id: "troll_master", name: "Troll Master", icon: "🤡", requirement: "Win Troll of the Week" },
-    { id: "diamond", name: "Diamond", icon: "💎", requirement: "Reach Position #1" },
-    { id: "lightning", name: "Lightning", icon: "⚡", requirement: "Get 100 likes on one post" },
-    { id: "skull", name: "Savage", icon: "💀", requirement: "Win 10 Meme Wars" },
-    { id: "rainbow", name: "Rainbow", icon: "🌈", requirement: "Post in all categories" },
-    { id: "rocket", name: "Rocket", icon: "🚀", requirement: "Get featured by admin" },
-    { id: "heart", name: "Loved", icon: "❤️", requirement: "Get 1000 total likes" },
-];
+const ALL_BADGES = BADGES_LIST;
 
 export default function BadgesPage() {
     const { userProfile, refreshProfile } = useAuth();
@@ -66,8 +54,12 @@ export default function BadgesPage() {
                         className="bg-gradient-to-r from-[var(--btn-gradient-start)]/20 to-[var(--btn-gradient-end)]/20 border border-[var(--primary)]/30 rounded-2xl p-6 mb-8 text-center"
                     >
                         <p className="text-sm text-[var(--muted)] mb-2">Active Badge</p>
-                        <div className="text-5xl mb-3">
-                            {ALL_BADGES.find(b => b.id === selectedBadge)?.icon}
+                        <div className="text-5xl mb-3 flex justify-center">
+                            {(() => {
+                                const b = ALL_BADGES.find(b => b.id === selectedBadge);
+                                if (b?.image) return <img src={b.image} alt={b.name} className="w-20 h-20 object-contain" />;
+                                return b?.icon;
+                            })()}
                         </div>
                         <p className="font-bold text-lg">
                             {ALL_BADGES.find(b => b.id === selectedBadge)?.name}
@@ -107,7 +99,13 @@ export default function BadgesPage() {
                                     whileTap={{ scale: 0.98 }}
                                 >
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-3xl">{badge.icon}</span>
+                                        <span className="text-3xl">
+                                            {badge.image ? (
+                                                <img src={badge.image} alt={badge.name} className="w-10 h-10 object-contain" />
+                                            ) : (
+                                                badge.icon
+                                            )}
+                                        </span>
                                         {selectedBadge === badge.id && (
                                             <span className="btn-primary text-xs px-2 py-1 rounded-full flex items-center gap-1">
                                                 <Check size={12} />
@@ -135,7 +133,13 @@ export default function BadgesPage() {
                                     className={`glass-card p-5 ${!owned ? "opacity-50" : ""}`}
                                 >
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-3xl">{badge.icon}</span>
+                                        <span className="text-3xl">
+                                            {badge.image ? (
+                                                <img src={badge.image} alt={badge.name} className="w-10 h-10 object-contain" />
+                                            ) : (
+                                                badge.icon
+                                            )}
+                                        </span>
                                         {owned ? (
                                             <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full">
                                                 Owned

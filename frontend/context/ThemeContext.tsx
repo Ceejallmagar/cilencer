@@ -60,11 +60,6 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
         setThemeState(newTheme);
     };
 
-    // Prevent flash of unstyled content
-    if (!mounted) {
-        return <div style={{ visibility: 'hidden' }}>{children}</div>;
-    }
-
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
             {children}

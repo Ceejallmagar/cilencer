@@ -4,7 +4,9 @@ import { motion } from "framer-motion";
 import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/context/AuthContext";
 import { usersAPI } from "@/lib/api";
-import { Trophy, Award, Image as ImageIcon, Edit2, Loader2 } from "lucide-react";
+import { getBadgeEmoji, getBadgeImage, getBadgeType } from "@/lib/badges";
+import { PostCard } from "@/components/posts/PostCard";
+import { Trophy, Award, Image as ImageIcon, Trash, MessageCircle, Loader2 } from "lucide-react";
 
 export default function ProfilePage() {
     const { user, userProfile, refreshProfile } = useAuth();
@@ -36,75 +38,88 @@ export default function ProfilePage() {
         }
     };
 
-    const getBadgeEmoji = (badgeId: string) => {
-        const badges: Record<string, string> = {
-            meme_flower: "🌸",
-            meme_star: "⭐",
-            meme_crown: "👑",
-            admin_badge: "🛡️",
-            troll_master: "🤡",
-            fire_badge: "🔥",
-            diamond: "💎",
-        };
-        return badges[badgeId] || "🏅";
-    };
+
 
     return (
         <MainLayout>
             <div className="pb-20 md:pb-8">
                 {/* Profile Header */}
+                {/* Profile Header */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="glass-card p-6 mb-8"
+                    className="glass-card mb-8 overflow-hidden relative"
                 >
-                    <div className="flex flex-col md:flex-row items-center gap-6">
+                    {/* Banner */}
+                    <div
+                        className="h-32 w-full"
+                        style={{
+                            background: userProfile?.bannerColor || "linear-gradient(to right, var(--card-bg), transparent)"
+                        }}
+                    />
+
+                    <div className="p-6 relative pt-0 mt-[-48px] flex flex-col md:flex-row items-end md:items-center gap-6">
                         {/* Profile Picture */}
-                        <div className="profile-pic-container">
-                            {userProfile?.activeBadge && (
-                                <div className="profile-badge-outer" />
-                            )}
-                            {userProfile?.photoURL ? (
+                        <div className="profile-pic-container relative z-10">
+                            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-[var(--background)] overflow-hidden bg-gray-800 relative z-0">
+                                {userProfile?.photoURL ? (
+                                    <img
+                                        src={userProfile.photoURL}
+                                        alt={userProfile.displayName}
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-white bg-gradient-to-br from-purple-500 to-pink-500">
+                                        {userProfile?.username?.[0]?.toUpperCase()}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Frame Badge Overlay - Outside clipping container */}
+                            {userProfile?.activeBadge && getBadgeType(userProfile.activeBadge) === 'frame' && (
                                 <img
-                                    src={userProfile.photoURL}
-                                    alt="Profile"
-                                    className="w-24 h-24 rounded-full object-cover border-4 border-[var(--primary)]"
+                                    src={getBadgeImage(userProfile.activeBadge)}
+                                    alt="Frame Badge"
+                                    className="badge-frame"
+                                    style={{ width: '135%', height: '135%' }}
                                 />
-                            ) : (
-                                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-[var(--btn-gradient-start)] to-[var(--btn-gradient-end)] flex items-center justify-center text-3xl font-bold text-[var(--btn-text)]">
-                                    {userProfile?.displayName?.charAt(0).toUpperCase() || "U"}
-                                </div>
                             )}
-                            {userProfile?.activeBadge && (
-                                <span className="badge-decoration text-2xl">
-                                    {getBadgeEmoji(userProfile.activeBadge)}
+
+                            {/* Standard Badge (Bottom Right) - Only if NOT a frame */}
+                            {userProfile?.activeBadge && getBadgeType(userProfile.activeBadge) !== 'frame' && (
+                                <span className="badge-decoration">
+                                    {getBadgeImage(userProfile.activeBadge) ? (
+                                        <img
+                                            src={getBadgeImage(userProfile.activeBadge)!}
+                                            alt="Badge"
+                                            className="w-8 h-8 object-contain drop-shadow-lg"
+                                        />
+                                    ) : (
+                                        getBadgeEmoji(userProfile.activeBadge)
+                                    )}
                                 </span>
                             )}
                         </div>
 
                         {/* Info */}
-                        <div className="flex-1 text-center md:text-left">
+                        <div className="flex-1 text-center md:text-left mb-2 w-full">
                             <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                                 <h1 className="text-2xl font-bold">{userProfile?.displayName}</h1>
-                                {userProfile?.isVerified && <span className="verified-badge" />}
-                                {userProfile?.isAdmin && <span className="admin-indicator">Admin</span>}
+                                {userProfile?.isVerified && <span className="verified-badge" title="Verified" />}
+                                {userProfile?.isAdmin && (
+                                    <div className="flex items-center gap-1 bg-red-500/20 text-red-500 px-2 py-0.5 rounded-md text-xs font-bold border border-red-500/30">
+                                        🛡️ ADMIN
+                                    </div>
+                                )}
                             </div>
                             <p className="text-[var(--muted)] mb-2">@{userProfile?.username}</p>
                             {userProfile?.bio && (
-                                <p className="text-sm mb-3">{userProfile.bio}</p>
-                            )}
-
-                            {/* Position */}
-                            {userProfile?.position && userProfile.position > 0 && (
-                                <div className="inline-flex items-center gap-2 bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full text-sm">
-                                    <Trophy size={14} />
-                                    Position #{userProfile.position}
-                                </div>
+                                <p className="text-sm mb-3 max-w-md mx-auto md:mx-0">{userProfile.bio}</p>
                             )}
                         </div>
 
                         {/* Stats */}
-                        <div className="flex gap-6 text-center">
+                        <div className="flex gap-6 text-center pb-4 md:pb-0 mx-auto md:mx-0">
                             <div>
                                 <p className="text-2xl font-bold gradient-text">{userProfile?.memeCount || 0}</p>
                                 <p className="text-xs text-[var(--muted)]">Memes</p>
@@ -126,7 +141,7 @@ export default function ProfilePage() {
                 </motion.div>
 
                 {/* Badges Section */}
-                {userProfile?.badges && userProfile.badges.length > 0 && (
+                {((userProfile?.badges?.length ?? 0) > 0 || userProfile?.isAdmin) && (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -137,20 +152,31 @@ export default function ProfilePage() {
                             My Badges
                         </h2>
                         <div className="flex flex-wrap gap-3">
-                            {userProfile.badges.map((badge, index) => (
-                                <div
-                                    key={index}
-                                    className={`flex items-center gap-2 px-4 py-2 rounded-xl ${userProfile.activeBadge === badge
-                                        ? "bg-purple-500/30 border border-purple-500"
-                                        : "bg-[var(--card-bg)] border border-[var(--card-border)]"
-                                        }`}
-                                >
-                                    <span className="text-xl">{getBadgeEmoji(badge)}</span>
-                                    <span className="text-sm font-medium capitalize">
-                                        {badge.replace(/_/g, " ")}
-                                    </span>
-                                </div>
-                            ))}
+                            {/* Merge existing badges with virtual admin badge */}
+                            {[
+                                ...(userProfile?.isAdmin ? ["admin_badge"] : []),
+                                ...(userProfile?.badges || [])
+                            ].filter((badge, index, self) => self.indexOf(badge) === index) // Unique
+                                .map((badge, index) => (
+                                    <div
+                                        key={index}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${userProfile?.activeBadge === badge
+                                            ? "bg-purple-500/30 border border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                                            : "bg-[var(--card-bg)] border border-[var(--card-border)]"
+                                            }`}
+                                    >
+                                        <span className="text-xl">
+                                            {getBadgeImage(badge) ? (
+                                                <img src={getBadgeImage(badge)} alt="Badge" className="w-6 h-6 object-contain" />
+                                            ) : (
+                                                getBadgeEmoji(badge)
+                                            )}
+                                        </span>
+                                        <span className="text-sm font-medium capitalize">
+                                            {badge.replace(/_/g, " ")}
+                                        </span>
+                                    </div>
+                                ))}
                         </div>
                     </motion.div>
                 )}
@@ -189,21 +215,16 @@ export default function ProfilePage() {
                             <p className="text-[var(--muted)]">No memes posted yet!</p>
                         </div>
                     ) : (
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-4">
                             {memes.map((meme) => (
-                                <div key={meme.id} className="glass-card p-4">
-                                    <p className="mb-2">{meme.content}</p>
-                                    {meme.imageURL && (
-                                        <img
-                                            src={meme.imageURL}
-                                            alt=""
-                                            className="rounded-lg w-full h-40 object-cover mb-2"
-                                        />
-                                    )}
-                                    <div className="flex gap-4 text-sm text-[var(--muted)]">
-                                        <span>{meme.likes} ❤️</span>
-                                        <span>{meme.replyCount} 💬</span>
-                                    </div>
+                                <div key={meme.id}>
+                                    <PostCard
+                                        post={meme}
+                                        onDelete={() => {
+                                            // Remove from local state immediately
+                                            setMemes(prev => prev.filter(p => p.id !== meme.id));
+                                        }}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -216,11 +237,35 @@ export default function ProfilePage() {
                 ) : (
                     <div className="space-y-4">
                         {trolls.map((troll) => (
-                            <div key={troll.id} className="glass-card p-4">
-                                <p className="mb-2">{troll.content}</p>
-                                <p className="text-sm text-[var(--muted)]">
-                                    {troll.responses?.length || 0} responses
-                                </p>
+                            <div key={troll.id} className="glass-card p-5 relative group">
+                                {troll.creatorId === user?.uid && (
+                                    <button
+                                        onClick={async () => {
+                                            if (!confirm("Are you sure you want to delete this troll post?")) return;
+                                            try {
+                                                const { trollsAPI } = await import('@/lib/api');
+                                                await trollsAPI.deleteTroll(troll.id);
+                                                setTrolls(prev => prev.filter(t => t.id !== troll.id));
+                                                refreshProfile();
+                                            } catch (error) {
+                                                alert("Failed to delete troll post");
+                                            }
+                                        }}
+                                        className="absolute top-4 right-4 p-2 bg-red-500/10 text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Delete Troll Post"
+                                    >
+                                        <Trash size={16} />
+                                    </button>
+                                )}
+                                <p className="text-lg mb-3 leading-relaxed">{troll.content}</p>
+                                <div className="flex items-center gap-4 text-sm text-[var(--muted)]">
+                                    <span className="flex items-center gap-1">
+                                        <MessageCircle size={14} />
+                                        {troll.responses?.length || 0} responses
+                                    </span>
+                                    <span>·</span>
+                                    <span>{new Date(troll.createdAt?.seconds * 1000).toLocaleDateString()}</span>
+                                </div>
                             </div>
                         ))}
                     </div>

@@ -54,7 +54,7 @@
 body {
     background: var(--background);
     color: var(--foreground);
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-sans), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", system-ui, -apple-system, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -206,11 +206,19 @@ body {
 
 .badge-decoration {
     position: absolute;
-    bottom: -5px;
-    right: -5px;
-    font-size: 1.2rem;
+    bottom: -2px;
+    right: -2px;
+    font-size: 1.4rem;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     z-index: 10;
+    background: var(--card-bg);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--background);
 }
 
 /* Verified Badge (Black Tick) */
@@ -255,50 +263,6 @@ body {
     background: rgba(239, 68, 68, 0.2);
 }
 
-/* Post Actions (Right column layout) */
-.post-actions-column {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    align-items: center;
-    padding: 8px;
-    margin-left: 12px;
-    border-left: 1px solid var(--card-border);
-    min-width: 60px;
-}
-
-.post-action-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 12px;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 56px;
-    background: var(--card-bg);
-    border: 1px solid transparent;
-    color: var(--muted);
-}
-
-.post-action-btn:hover {
-    background: var(--accent-glow);
-    border-color: var(--primary);
-    transform: scale(1.05);
-    color: var(--foreground);
-}
-
-.post-action-btn.liked {
-    color: #ef4444;
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-.post-action-btn.liked .action-icon {
-    animation: like-burst 0.4s ease-out;
-}
 
 /* Gradient Text */
 .gradient-text {
@@ -406,6 +370,10 @@ body {
     transition: all 0.2s ease;
     border: 1px solid var(--card-border);
     white-space: nowrap;
+    /* Override global mobile button styles */
+    min-width: auto;
+    min-height: auto;
+    border-radius: 9999px;
 }
 
 .filter-tag:hover {
@@ -446,6 +414,19 @@ body {
     border-radius: 50%;
     background: linear-gradient(135deg, #a855f7, #ec4899);
     z-index: -1;
+}
+
+.badge-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140%;
+    /* Adjust based on frame thickness */
+    height: 140%;
+    pointer-events: none;
+    z-index: 20;
+    object-fit: contain;
 }
 
 /* Notification Badge */
@@ -527,14 +508,7 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .post-actions-column {
-        flex-direction: row;
-        justify-content: space-around;
-        width: 100%;
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid var(--card-border);
-    }
+
 
     .post-action-btn {
         flex-direction: row;
@@ -548,18 +522,29 @@ body {
     }
 
     /* Fix touch targets */
-    button, a, input, textarea, select {
+    button,
+    a,
+    input,
+    textarea,
+    select {
         -webkit-tap-highlight-color: rgba(168, 85, 247, 0.2);
     }
 
     /* Prevent horizontal scroll */
-    html, body {
+    html,
+    body {
         overflow-x: hidden;
         width: 100%;
     }
 
+    /* Ensure content is not hidden behind fixed elements */
+    main {
+        padding-top: 80px !important;
+    }
+
     /* Better touch targets for mobile */
-    button, a {
+    button,
+    a {
         min-height: 44px;
         min-width: 44px;
     }
@@ -569,6 +554,7 @@ body {
         .safe-area-inset-top {
             padding-top: max(16px, env(safe-area-inset-top));
         }
+
         .safe-area-inset-bottom {
             padding-bottom: max(16px, env(safe-area-inset-bottom));
         }

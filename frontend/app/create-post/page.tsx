@@ -21,9 +21,13 @@ export default function CreatePostPage() {
     const router = useRouter();
     const [content, setContent] = useState("");
     const [imageURL, setImageURL] = useState("");
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [filePreview, setFilePreview] = useState<string>("");
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [error, setError] = useState("");
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleCategoryToggle = (categoryId: string) => {
         setSelectedCategories(prev =>
@@ -33,21 +37,102 @@ export default function CreatePostPage() {
         );
     };
 
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                setError("File is too large! Max 10MB please. 😅");
+                return;
+            }
+            setSelectedFile(file);
+            setImageURL("");
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFilePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+
+
+    const uploadFile = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const formData = new FormData();
+            formData.append('image', file);
+
+            const xhr = new XMLHttpRequest();
+
+            // Track upload progress
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const progress = (e.loaded / e.total) * 100;
+                    setUploadProgress(progress);
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response.imageURL);
+                    } catch (error) {
+                        reject(new Error('Failed to parse upload response'));
+                    }
+                } else {
+                    reject(new Error(`Upload failed with status ${xhr.status}`));
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                reject(new Error('Upload failed'));
+            });
+
+            // Get auth token for the request
+            const getAuthToken = async () => {
+                try {
+                    const user = (await import('@/lib/firebase')).auth.currentUser;
+                    if (user) {
+                        return await user.getIdToken();
+                    }
+                    throw new Error('Not authenticated');
+                } catch (error) {
+                    throw new Error('Failed to get auth token');
+                }
+            };
+
+            getAuthToken().then(token => {
+                xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'}/api/posts/upload-image`);
+                xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+                xhr.send(formData);
+            }).catch(error => {
+                reject(error);
+            });
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!content.trim()) {
-            setError("Write something epic first! 🔥");
+        if (!content.trim() && !selectedFile && !imageURL) {
+            setError("Write something or add a meme! 🔥");
             return;
         }
 
         setLoading(true);
         setError("");
+        setUploadProgress(0);
 
         try {
+            let finalImageURL = imageURL.trim();
+
+            if (selectedFile) {
+                finalImageURL = await uploadFile(selectedFile);
+            }
+
             await postsAPI.createPost({
                 content: content.trim(),
-                imageURL: imageURL.trim() || undefined,
+                imageURL: finalImageURL || undefined,
                 category: selectedCategories.length > 0 ? selectedCategories : undefined,
             });
 
@@ -56,6 +141,7 @@ export default function CreatePostPage() {
             setError(err.message || "Failed to create post");
         } finally {
             setLoading(false);
+            setUploadProgress(0);
         }
     };
 
@@ -110,36 +196,92 @@ export default function CreatePostPage() {
                         </div>
                     </div>
 
-                    {/* Image URL */}
+                    {/* Media Upload */}
                     <div>
                         <label className="block text-sm font-medium mb-2">
-                            <Image size={16} className="inline mr-2" />
-                            Meme Image (optional)
+                            Add Media (Photo/Video)
                         </label>
-                        <input
-                            type="url"
-                            value={imageURL}
-                            onChange={(e) => setImageURL(e.target.value)}
-                            placeholder="https://example.com/your-meme.jpg"
-                            className="input-field"
-                        />
+                        <div className="flex flex-col gap-4">
+                            <div
+                                onClick={() => fileInputRef.current?.click()}
+                                className="border-2 border-dashed border-[var(--card-border)] rounded-2xl p-12 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-[var(--primary)] hover:bg-[var(--card-bg)] transition-all group overflow-hidden"
+                            >
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    accept="image/*,video/*"
+                                    className="hidden"
+                                />
+                                <div className="p-4 bg-[var(--card-bg)] rounded-full group-hover:scale-110 transition-transform">
+                                    <Image size={32} className="text-[var(--muted)] group-hover:text-[var(--primary)]" />
+                                </div>
+                                <div className="text-center">
+                                    <span className="block text-lg font-bold">Choose from Gallery / Camera</span>
+                                    <span className="text-sm text-[var(--muted)]">Photos or Videos up to 10MB</span>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <div className="h-[1px] flex-1 bg-[var(--card-border)]"></div>
+                                <span className="text-xs uppercase font-black text-[var(--muted)]">Or paste URL</span>
+                                <div className="h-[1px] flex-1 bg-[var(--card-border)]"></div>
+                            </div>
+
+                            <input
+                                type="url"
+                                value={imageURL}
+                                onChange={(e) => {
+                                    setImageURL(e.target.value);
+                                    setSelectedFile(null);
+                                    setFilePreview("");
+                                }}
+                                placeholder="https://example.com/meme.jpg"
+                                className="input-field"
+                            />
+                        </div>
                     </div>
 
-                    {/* Image Preview */}
-                    {imageURL && (
-                        <div className="relative rounded-xl overflow-hidden border border-[var(--card-border)]">
-                            <img
-                                src={imageURL}
-                                alt="Preview"
-                                className="w-full h-64 object-cover"
-                                onError={() => setImageURL("")}
+                    {/* Progress Bar */}
+                    {loading && uploadProgress > 0 && uploadProgress < 100 && (
+                        <div className="w-full bg-[var(--card-bg)] rounded-full h-3 overflow-hidden border border-[var(--card-border)]">
+                            <motion.div
+                                className="h-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)]"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${uploadProgress}%` }}
                             />
+                        </div>
+                    )}
+
+                    {/* Media Preview */}
+                    {(filePreview || imageURL) && (
+                        <div className="relative rounded-2xl overflow-hidden border border-[var(--card-border)] bg-black/40">
+                            {selectedFile?.type.startsWith('video/') || (imageURL.match(/\.(mp4|webm|ogg|mov)(\?|$)/i) && !filePreview) ? (
+                                <video
+                                    src={filePreview || imageURL}
+                                    controls
+                                    className="w-full max-h-[400px] object-contain"
+                                />
+                            ) : (
+                                <img
+                                    src={filePreview || imageURL}
+                                    alt="Preview"
+                                    className="w-full max-h-[400px] object-contain"
+                                    onError={() => {
+                                        if (imageURL) setImageURL("");
+                                    }}
+                                />
+                            )}
                             <button
                                 type="button"
-                                onClick={() => setImageURL("")}
-                                className="absolute top-3 right-3 p-2 bg-black/50 rounded-full hover:bg-black/70"
+                                onClick={() => {
+                                    setSelectedFile(null);
+                                    setFilePreview("");
+                                    setImageURL("");
+                                }}
+                                className="absolute top-4 right-4 p-2 bg-black/60 rounded-full hover:bg-black/80 transition-colors backdrop-blur-md"
                             >
-                                <X size={18} />
+                                <X size={20} />
                             </button>
                         </div>
                     )}

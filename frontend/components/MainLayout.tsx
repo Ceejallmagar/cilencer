@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
+import { RightSidebar } from "./RightSidebar";
 
 interface MainLayoutProps {
     children: React.ReactNode;
@@ -36,11 +37,12 @@ export const MainLayout = ({ children }: MainLayoutProps) => {
             <Navbar />
             <div className="flex">
                 <Sidebar />
-                <main className="flex-1 md:ml-64 pt-20 md:pt-28 pb-20 md:pb-8 px-4 md:px-6 w-full">
+                <main className="flex-1 md:ml-64 xl:mr-80 pt-20 md:pt-28 pb-20 md:pb-8 px-4 md:px-6 w-full min-h-screen">
                     <div className="max-w-4xl mx-auto w-full">
                         {children}
                     </div>
                 </main>
+                <RightSidebar />
             </div>
         </div>
     );

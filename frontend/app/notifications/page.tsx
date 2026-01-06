@@ -87,7 +87,7 @@ export default function NotificationsPage() {
                     {unreadCount > 0 && (
                         <button
                             onClick={handleMarkAllAsRead}
-                            className="btn-secondary flex items-center gap-2"
+                            className="btn-secondary flex items-center gap-2 shrink-0 whitespace-nowrap"
                         >
                             <CheckCheck size={18} />
                             Mark all read

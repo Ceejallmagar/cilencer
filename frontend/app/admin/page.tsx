@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/MainLayout";
 import { useAuth } from "@/context/AuthContext";
-import { adminAPI } from "@/lib/api";
+import { adminAPI, usersAPI } from "@/lib/api";
 import {
     LayoutDashboard, Users, Sword, MessageCircle, Bell,
     UserCog, TrendingUp, Loader2, Shield, ArrowRight
@@ -15,6 +15,33 @@ export default function AdminDashboard() {
     const { userProfile } = useAuth();
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searching, setSearching] = useState(false);
+
+    const handleSearch = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+        setSearching(true);
+        try {
+            const users = await usersAPI.searchUsers(searchQuery);
+            setSearchResults(users);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const handleFeature = async (userId: string) => {
+        if (!confirm("Feature this user? They will receive the Rocket badge.")) return;
+        try {
+            await adminAPI.featureUser(userId);
+            alert("User featured successfully!");
+        } catch (err) {
+            alert("Failed to feature user");
+        }
+    };
 
     useEffect(() => {
         if (userProfile && !userProfile.isAdmin) {
@@ -153,6 +180,56 @@ export default function AdminDashboard() {
                             <p className="text-sm text-[var(--muted)]">{section.description}</p>
                         </motion.button>
                     ))}
+                </div>
+
+                {/* Feature User Section */}
+                <div className="glass-card p-6 mt-8">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        🚀 Feature User
+                    </h2>
+                    <p className="text-[var(--muted)] mb-4">Search for a user to award them the Rocket badge and feature them.</p>
+
+                    <form onSubmit={handleSearch} className="flex gap-2 mb-4">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="flex-1 p-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--card-border)] outline-none focus:border-[var(--primary)]"
+                            placeholder="Search by username..."
+                        />
+                        <button type="submit" className="btn-primary" disabled={searching}>
+                            {searching ? <Loader2 className="animate-spin" /> : "Search"}
+                        </button>
+                    </form>
+
+                    <div className="space-y-2">
+                        {searchResults.map((user) => (
+                            <div key={user.uid} className="flex items-center justify-between p-3 bg-[var(--background)] rounded-xl border border-[var(--card-border)]">
+                                <div className="flex items-center gap-3">
+                                    {user.photoURL ? (
+                                        <img src={user.photoURL} alt={user.username} className="w-10 h-10 rounded-full object-cover" />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold">
+                                            {user.username?.[0]?.toUpperCase()}
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="font-bold">{user.displayName}</p>
+                                        <p className="text-sm text-[var(--muted)]">@{user.username}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleFeature(user.uid)}
+                                    className="px-4 py-2 bg-[var(--accent-glow)] text-[var(--foreground)] rounded-lg font-bold hover:bg-[var(--primary)]/20 transition-colors"
+                                >
+                                    Feature 🚀
+                                </button>
+                            </div>
+                        ))}
+                        {searchResults.length === 0 && searchQuery && !searching && (
+                            <p className="text-center text-[var(--muted)] py-4">No users found</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </MainLayout>

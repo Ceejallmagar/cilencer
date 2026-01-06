@@ -120,11 +120,11 @@ export default function MemeWarPage() {
         if (!activeWar) return null;
         switch (activeWar.status) {
             case 'submission':
-                return <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1"><Flame size={14} /> SUBMISSIONS OPEN</span>;
+                return <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 shrink-0 whitespace-nowrap"><Flame size={14} /> SUBMISSIONS OPEN</span>;
             case 'voting':
-                return <span className="btn-primary px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1"><ThumbsUp size={14} /> VOTING ACTIVE</span>;
+                return <span className="btn-primary px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 shrink-0 whitespace-nowrap"><ThumbsUp size={14} /> VOTING ACTIVE</span>;
             case 'ended':
-                return <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1"><Trophy size={14} /> WAR ENDED</span>;
+                return <span className="bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 shrink-0 whitespace-nowrap"><Trophy size={14} /> WAR ENDED</span>;
             default:
                 return null;
         }
@@ -181,7 +181,7 @@ export default function MemeWarPage() {
                                     <button
                                         type="submit"
                                         disabled={submitting || !submission.trim()}
-                                        className="bg-white text-red-600 px-6 py-2 rounded-xl font-bold hover:bg-white/90 transition-colors disabled:opacity-50"
+                                        className="bg-white text-red-600 px-6 py-2 rounded-xl font-bold hover:bg-white/90 transition-colors disabled:opacity-50 shrink-0 whitespace-nowrap"
                                     >
                                         Challenge
                                     </button>
@@ -258,7 +258,7 @@ export default function MemeWarPage() {
                                                 <button
                                                     onClick={() => handleVote(entry.id, 'challenger')}
                                                     disabled={entry.voterIds?.includes(userProfile.uid)}
-                                                    className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all 
+                                                    className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap 
                                                         ${entry.voterIds?.includes(userProfile.uid) ? 'opacity-50 cursor-not-allowed bg-[var(--muted)]' : 'bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white'}`}
                                                 >
                                                     <ThumbsUp size={14} />
@@ -303,7 +303,7 @@ export default function MemeWarPage() {
                                                         <button
                                                             onClick={() => handleVote(entry.id, 'responder')}
                                                             disabled={entry.voterIds?.includes(userProfile.uid)}
-                                                            className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all 
+                                                            className={`px-4 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all shrink-0 whitespace-nowrap 
                                                                 ${entry.voterIds?.includes(userProfile.uid) ? 'opacity-50 cursor-not-allowed bg-[var(--muted)]' : 'bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white'}`}
                                                         >
                                                             <ThumbsUp size={14} />
@@ -352,7 +352,7 @@ export default function MemeWarPage() {
                                                     ) : (
                                                         <button
                                                             onClick={() => setRespondingTo(entry.id)}
-                                                            className="mt-2 bg-[var(--card-bg)] hover:bg-red-500 hover:text-white transition-all px-4 py-2 rounded-full text-sm font-bold border border-[var(--border)] shadow-sm"
+                                                            className="mt-2 bg-[var(--card-bg)] hover:bg-red-500 hover:text-white transition-all px-4 py-2 rounded-full text-sm font-bold border border-[var(--border)] shadow-sm shrink-0 whitespace-nowrap"
                                                         >
                                                             🔥 ROAST THIS
                                                         </button>

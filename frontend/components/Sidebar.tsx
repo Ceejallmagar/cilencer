@@ -6,6 +6,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter, usePathname } from "next/navigation";
 import { notificationsAPI } from "@/lib/api";
+import { getBadgeEmoji, getBadgeImage, getBadgeType } from "@/lib/badges";
 
 export const Sidebar = () => {
     const router = useRouter();
@@ -62,23 +63,45 @@ export const Sidebar = () => {
                     >
                         <div className="flex items-center space-x-3">
                             <div className="profile-pic-container">
-                                {activeBadge && (
-                                    <div className="profile-badge-outer" />
-                                )}
-                                {photoURL ? (
-                                    <img
-                                        src={photoURL}
-                                        alt="Profile"
-                                        className="w-12 h-12 rounded-full object-cover border-2 border-[var(--primary)]"
-                                    />
-                                ) : (
-                                    <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[var(--btn-gradient-start)] to-[var(--btn-gradient-end)] flex items-center justify-center text-lg font-bold text-[var(--btn-text)]">
-                                        {displayName.charAt(0).toUpperCase()}
+                                <div className="relative">
+                                    {/* Profile Picture with Frame support */}
+                                    <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center font-bold text-white relative z-0 overflow-visible">
+                                        {userProfile?.photoURL ? (
+                                            <img
+                                                src={userProfile.photoURL}
+                                                alt={userProfile.displayName}
+                                                className="w-full h-full rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <span>{userProfile?.displayName[0]}</span>
+                                        )}
+
+                                        {/* Frame Overlay */}
+                                        {activeBadge && getBadgeType(activeBadge) === 'frame' && (
+                                            <img
+                                                src={getBadgeImage(activeBadge)}
+                                                alt="Frame Badge"
+                                                className="badge-frame"
+                                                style={{ width: '150%', height: '150%' }} // Slightly larger for sidebar
+                                            />
+                                        )}
                                     </div>
-                                )}
-                                {activeBadge && (
-                                    <span className="badge-decoration">🌸</span>
-                                )}
+
+                                    {/* Standard Badge (Bottom Right) - Only if NOT a frame */}
+                                    {activeBadge && getBadgeType(activeBadge) !== 'frame' && (
+                                        <span className="badge-decoration">
+                                            {getBadgeImage(activeBadge) ? (
+                                                <img
+                                                    src={getBadgeImage(activeBadge)}
+                                                    alt="Badge"
+                                                    className="w-6 h-6 object-contain drop-shadow-md"
+                                                />
+                                            ) : (
+                                                getBadgeEmoji(activeBadge)
+                                            )}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1">
